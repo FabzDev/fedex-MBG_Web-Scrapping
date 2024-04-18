@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
-    "start": "npx ts-node index.ts"
+    "start": "npx ts-node index.ts",
+    "sannybot": "npx ts-node sannysoft.ts",
+    "gsr": "npx ts-node fedexGSR.ts"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +17,8 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
-    "puppeteer": "^22.6.5"
+    "puppeteer": "^22.6.5",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   }
 }

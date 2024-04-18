@@ -9,5 +9,4 @@
         "moduleResolution": "node",
         "jsx": "react"
     },
-    "include": ["./src/**/*"]
 }
