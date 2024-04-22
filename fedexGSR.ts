@@ -2,6 +2,7 @@ const puppeteer = require("puppeteer-extra");
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 import { Browser, Page } from "puppeteer";
 import gsrList from './gsrList.json';
+import { GsrInterface } from './gsr.interface';
 
 puppeteer.use(StealthPlugin());
 const url =
@@ -26,16 +27,16 @@ const gsr = async () => {
   await page.screenshot({ path: "FxWebsite.jpg" });
 
   await page.click('input[value="E"]');
-  await wait(50);
+  await wait(500);
 
   await page.click('input[value="invoice"]');
-  await wait(50);
+  await wait(500);
 
   await page.click('input[name="StatusReq"]');
   await wait(3000);
 
-  for(const gsr of gsrList){
-    await takeScreenshot(gsr["Tracking Number"],gsr.INVOICE_NUMBER, page);
+  for( const gsr of gsrList as GsrInterface[]){
+    await takeScreenshot(gsr["Tracking Number"], gsr.INVOICE_NUMBER, page);
   }
   
   await browser.close();
@@ -43,29 +44,17 @@ const gsr = async () => {
 
 async function takeScreenshot(trackNumber: string, invoiceNumber: string, page: Page){
   
-  await page.click('input[name="tracking_nbr"]', { clickCount: 3 }); 
-  await page.keyboard.press('Backspace');
-  await page.type('input[name="tracking_nbr"]', trackNumber);
-  await wait(3000);
-
-  await page.click('input[name="invoice_nbr"]', { clickCount: 3 });
-  await page.keyboard.press('Backspace');
-  await page.type('input[name="invoice_nbr"]', invoiceNumber);
-  await wait(3000);
-  
-  await page.click('input[value="Send Request"]');
+  typeInfoAndSendRequest(trackNumber, invoiceNumber, page);
   
   try{
-    await page.waitForNavigation({timeout: 30000})
+    await page.waitForNavigation({timeout: 33000})
   } catch {
-    console.log('bug');
-    await page.click('input[value="Send Request"]');
+    console.log('catch! ' + trackNumber + ' - ' + invoiceNumber);
+    await page.reload();
+    typeInfoAndSendRequest(trackNumber, invoiceNumber, page);
   }
 
-  if(await page.$('input[value="Send Request"]')){
-    await page.click('input[value="Send Request"]');
-    await page.waitForNavigation()
-  }
+  console.log('continue! ' + trackNumber +' - '+  invoiceNumber);
 
   await page.screenshot({
     path: `./imgs_GSR/${trackNumber}_${invoiceNumber}.jpg`,
@@ -78,6 +67,20 @@ async function takeScreenshot(trackNumber: string, invoiceNumber: string, page: 
 
 async function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function typeInfoAndSendRequest(trackNumber: string, invoiceNumber: string, page: Page){
+  await page.click('input[name="tracking_nbr"]', { clickCount: 3 }); 
+    await page.keyboard.press('Backspace');
+    await page.type('input[name="tracking_nbr"]', trackNumber);
+    await wait(1000);
+
+    await page.click('input[name="invoice_nbr"]', { clickCount: 3 });
+    await page.keyboard.press('Backspace');
+    await page.type('input[name="invoice_nbr"]', invoiceNumber);
+    await wait(1000);
+    
+    await page.click('input[value="Send Request"]');
 }
 
 

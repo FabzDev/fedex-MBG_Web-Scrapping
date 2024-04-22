@@ -6,19 +6,23 @@
   "scripts": {
     "start": "npx ts-node index.ts",
     "sannybot": "npx ts-node sannysoft.ts",
-    "gsr": "npx ts-node fedexGSR.ts"
+    "gsr": "npx ts-node fedexGSR.ts",
+    "buffGSR": "npx ts-node fedexGSRBuffer.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^20.12.7",
+    "@types/tesseract.js": "^2.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
   },
   "dependencies": {
+    "node-fetch": "^3.3.2",
     "puppeteer": "^22.6.5",
     "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2"
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "tesseract.js": "^5.0.4"
   }
 }

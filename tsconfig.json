@@ -1,14 +1,16 @@
 {
     "compilerOptions": {
-        "lib": ["ES5","ES6","DOM"],
-        "outDir": "./dist/",
-        "sourceMap": true,
-        "noImplicitAny": true,
-        "module": "CommonJS",
-        "target": "es6",
-        "moduleResolution": "node",
-        "jsx": "react",
+        "target": "es2018",
+        "module": "commonjs",
+        "strict": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
         "resolveJsonModule": true,
-        "esModuleInterop": true
+        // "lib": ["ES5","ES6","DOM"],
+        // "outDir": "./dist/",
+        // "sourceMap": true,
+        // "noImplicitAny": true,
+        // "moduleResolution": "node",
+        // "jsx": "react",
     },
 }
