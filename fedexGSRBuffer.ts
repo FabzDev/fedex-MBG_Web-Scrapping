@@ -12,7 +12,7 @@ const url = "https://www.fedex.com/servlet/InvoiceServlet?link=4&jsp_name=adjust
 const gsrArray: string[] = [];
 
 const gsr = async () => {
-  const browser: Browser = await puppeteer.launch({ headless: true });
+  const browser: Browser = await puppeteer.launch({ headless: false });
   const page: Page = await browser.newPage();
   await page.setViewport({ width: 1200, height: 800 });
 
@@ -24,7 +24,7 @@ const gsr = async () => {
   await page.click('input[value="invoice"]');
   await wait(500);
 
-  await page.click('input[name="StatusReq"]');
+  await page.click('input[name="NewReq"]');
   await wait(2000);
 
   for (const gsr of bufferList as GsrInterface[]) {
@@ -33,7 +33,7 @@ const gsr = async () => {
 
   printGSRArr(gsrArray);
 
-  await wait(10000);
+  await wait(5000);
   await browser.close();
 };
 
@@ -48,25 +48,31 @@ async function takeScreenshot( trackNumber: string, invoiceNumber: string, page:
     height: 120,
   };
 
+  // const isDisabled = await page.evaluate((selector) => {
+  //   const element = document.querySelector(selector)as HTMLInputElement;
+  //   return element && element.disabled;
+  // },'input[value="Send Request"]');
+
   typeInfoAndSendRequest(trackNumber, invoiceNumber, page);
 
-  try {
-    await page.waitForNavigation({ timeout: 33000 });
-  } catch {
-    console.log("catch! " + trackNumber + " - " + invoiceNumber);
-    await page.reload();
-    typeInfoAndSendRequest(trackNumber, invoiceNumber, page);
-  }
+  // try{
+  //   await page.waitForNavigation({ timeout: 33000 });
+  // } catch {
+  //   console.log("catch! " + trackNumber + " - " + invoiceNumber);
+  //   await page.click('input[value="Send Request"]');
+  // }
 
   console.log("continue! " + trackNumber + " - " + invoiceNumber);
 
   const buffImg = await page.screenshot({
     encoding: "binary",
     clip: clip,
+    path: `./GSRimgs/${trackNumber}_${invoiceNumber}.png`
   });
   await wait(1000);
   
   scanText(buffImg);
+
   await wait(1000);
 
 
@@ -85,12 +91,14 @@ async function typeInfoAndSendRequest(trackNumber: string, invoiceNumber: string
   await wait(500);
 
   await page.click('input[value="Send Request"]');
+
+  
 }
 
 async function scanText(bufferDeImagen: Buffer) {
   const worker = await createWorker('eng');
   const ret = await worker.recognize(bufferDeImagen);
-  gsrArray.push(ret.data.text);
+  gsrArray.push("\nInicio: " + ret.data.text + " \nFin");
   // console.log(ret.data.text);
   await worker.terminate();
 }
