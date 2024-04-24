@@ -28,7 +28,11 @@ const gsr = async () => {
   await wait(2000);
 
   for (const gsr of bufferList as GsrInterface[]) {
-    await takeScreenshot(gsr["Tracking Number"], gsr.INVOICE_NUMBER, page);
+    try{
+      await takeScreenshot(gsr["Tracking Number"], gsr.INVOICE_NUMBER, page);
+    } catch {
+      console.log("Catch Error: " + gsr["Tracking Number"] + "_" + gsr.INVOICE_NUMBER);
+    }
   }
 
   printGSRArr(gsrArray);
@@ -53,14 +57,8 @@ async function takeScreenshot( trackNumber: string, invoiceNumber: string, page:
   //   return element && element.disabled;
   // },'input[value="Send Request"]');
 
-  typeInfoAndSendRequest(trackNumber, invoiceNumber, page);
-
-  // try{
-  //   await page.waitForNavigation({ timeout: 33000 });
-  // } catch {
-  //   console.log("catch! " + trackNumber + " - " + invoiceNumber);
-  //   await page.click('input[value="Send Request"]');
-  // }
+  await typeInfoAndSendRequest(trackNumber, invoiceNumber, page);
+  await page.waitForNavigation({ timeout: 33000 });
 
   console.log("continue! " + trackNumber + " - " + invoiceNumber);
 
@@ -110,6 +108,5 @@ async function wait(ms: number) {
 function printGSRArr(strArr: string[]){
   for(const str of strArr){
     console.log(str);
-    
   }
 }
