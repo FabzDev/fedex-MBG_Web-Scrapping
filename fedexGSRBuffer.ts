@@ -14,9 +14,9 @@ const clip = { x: 290, y: 190, width: 550, height: 120 };
 
 
 // MAIN ALGORITM
-const gsr = async (gsr: GsrInterface, array: string[]) => {
-  const trackingNumber: string = gsr["Tracking Number"];
-  const invoiceNumber: string = gsr.INVOICE_NUMBER;
+async function gsr(gsr: GsrInterface, array: string[]){
+  const trackingNumber: string = gsr["TRACKING NUMBER"];
+  const invoiceNumber: string = gsr["INVOICE NUMBER"];
 
   const browser: Browser = await puppeteer.launch({ headless: true });
   const page: Page = await browser.newPage();
@@ -71,7 +71,7 @@ const gsr = async (gsr: GsrInterface, array: string[]) => {
 
   } catch {
     console.log(
-      "Error catched on " + gsr["Tracking Number"] + "_" + gsr.INVOICE_NUMBER
+      "Error catched on " + gsr["TRACKING NUMBER"] + "_" + gsr["INVOICE NUMBER"]
     );
   }
   
@@ -90,10 +90,10 @@ async function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function main(buffList: GsrInterface[], gsrArr: string[] ) {
+async function main(buffList: GsrInterface[], gsrArr: string[] ) {
   
   for(const gsrInfo of buffList){
-    gsr(gsrInfo, gsrArr);    
+    await gsr(gsrInfo, gsrArr);    
   }
 
   printGSRArr(gsrArr)

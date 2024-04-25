@@ -1,4 +1,4 @@
 export interface GsrInterface {
-    "Tracking Number": string;
-    INVOICE_NUMBER:    string;
+    "TRACKING NUMBER": string;
+    "INVOICE NUMBER":  string;
 }
