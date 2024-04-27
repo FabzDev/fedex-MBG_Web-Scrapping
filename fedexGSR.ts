@@ -1,7 +1,7 @@
 const puppeteer = require("puppeteer-extra");
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 import { Browser, Page } from "puppeteer";
-import bufferList from "./bufferGsrList.json";
+import bufferList from "./gsrList.json";
 import { GsrInterface } from "./gsr.interface";
 import { createWorker } from "tesseract.js";
 var XLSX = require("xlsx");
@@ -20,7 +20,7 @@ async function gsr(gsr: GsrInterface, array: string[]) {
   const trackingNumber: string = gsr["TRACKING NUMBER"];
   const invoiceNumber: string = gsr["INVOICE NUMBER"];
 
-  const browser: Browser = await puppeteer.launch({ headless: true });
+  const browser: Browser = await puppeteer.launch({ headless: false });
   const page: Page = await browser.newPage();
 
   await page.setViewport({ width: 1200, height: 800 });
@@ -39,7 +39,7 @@ async function gsr(gsr: GsrInterface, array: string[]) {
   await delay(2000);
   // END PUPPET PAGE 1
 
-  try {
+  // try {
     // START PUPPET PAGE 2
     await page.click('input[name="tracking_nbr"]', { clickCount: 3 });
     await page.keyboard.press("Backspace");
@@ -52,30 +52,41 @@ async function gsr(gsr: GsrInterface, array: string[]) {
     // await delay(500);
 
     await page.click('input[value="Send Request"]');
-    await page.waitForNavigation({ timeout: 15000 });
+    // await page.waitForNavigation({ timeout: 15000 });
     // END PUPPET PAGE 2
 
     // START PUPPET PAGE 3 (SCREENSHOT)
     // await delay(2000);
-    const buffImg = await page.screenshot({
-      encoding: "binary",
-      clip: clip,
-      // path: `./GSRimgs/${trackingNumber}_${invoiceNumber}.png`,
-    });
+    // const buffImg = await page.screenshot({
+    //   encoding: "binary",
+    //   clip: clip,
+    //   // path: `./GSRimgs/${trackingNumber}_${invoiceNumber}.png`,
+    // });
 
-    const worker = await createWorker("eng");
-    const ret = await worker.recognize(buffImg);
-    array.push("\n<-----Inicio\n" + ret.data.text + "\nFin----->");
+    // const worker = await createWorker("eng");
+    // const ret = await worker.recognize(buffImg);
+    // array.push("\n<-----Inicio\n" + ret.data.text + "\nFin----->");
     // console.log("\n<-----Inicio\n" + ret.data.text + "\nFin----->");
-    await worker.terminate();
+    // await worker.terminate();
     // await delay(1000);
     // END PUPPET PAGE 3 (SCREENSHOT)
-  } catch {
-    console.log(
-      "Error catched on " + gsr["TRACKING NUMBER"] + "_" + gsr["INVOICE NUMBER"]
-    );
-  }
+  // } catch {
+  //   console.log(
+  //     "Error catched on " + gsr["TRACKING NUMBER"] + "_" + gsr["INVOICE NUMBER"]
+  //   );
+  // }
+  await delay(5000)
+  await page.goBack()
+  await delay(5000)
+  await page.click('input[value="Send Request"]');
+  
+  await delay(5000)
+  await page.goBack()
+  await delay(5000)
+  await page.click('input[value="Send Request"]');
 
+
+  await delay(10000)
   await browser.close();
 }
 
@@ -141,7 +152,7 @@ async function main(buffList: GsrInterface[], gsrArr: string[]) {
     await gsr(gsrInfo, gsrArr);
   }
 
-  mapData(gsrArr);
+  // mapData(gsrArr);
 }
 
 main(bufferList, gsrArray);

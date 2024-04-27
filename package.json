@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
-    "start": "npx ts-node index.ts",
+    "start": "npx ts-node fedexGSR.ts",
     "sannybot": "npx ts-node sannysoft.ts",
     "gsr": "npx ts-node fedexGSR.ts",
     "buffGSR": "npx ts-node fedexGSRBuffer.ts"
