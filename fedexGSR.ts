@@ -1,92 +1,95 @@
-const puppeteer = require("puppeteer-extra");
-const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 import { Browser, Page } from "puppeteer";
+import puppeteer from "puppeteer-extra";
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import createWorker from "tesseract.js";
+import XLSX from "xlsx";
+import * as fs from "fs";
+
 import bufferList from "./gsrList.json";
+import { rejectReasons } from "./reasons";
 import { GsrInterface } from "./gsr.interface";
-import { createWorker } from "tesseract.js";
-var XLSX = require("xlsx");
-import * as fs from 'fs';
 
-
-// PREPARANDO PUPPETEER Y VARIABLES.
 puppeteer.use(StealthPlugin());
-const url =
-  "https://www.fedex.com/servlet/InvoiceServlet?link=4&jsp_name=adjustment&orig_country=US&language=english/";
-const gsrArray: string[] = [];
+const url = "https://www.fedex.com/servlet/InvoiceServlet?link=4&jsp_name=adjustment&orig_country=US&language=english/";
+const gsrResultArray: string[] = [];
 const clip = { x: 290, y: 190, width: 700, height: 120 };
+
+async function initialPage(page: Page) {
+  await page.goto(url);
+  await page.click('input[value="E"]');
+  await page.click('input[value="invoice"]');
+  await page.click('input[name="NewReq"]');
+  await delay(2000);
+}
+
+async function readMessage(){
+  //TODO
+}
+
+async function getDenyReason(){
+  //TODO
+}
 
 // MAIN ALGORITM
 async function gsr(gsr: GsrInterface, array: string[]) {
+  let counter = 0;
   const trackingNumber: string = gsr["TRACKING NUMBER"];
   const invoiceNumber: string = gsr["INVOICE NUMBER"];
-
   const browser: Browser = await puppeteer.launch({ headless: false });
   const page: Page = await browser.newPage();
-
   await page.setViewport({ width: 1200, height: 800 });
 
-  // START PUPPET PAGE 1
-  await page.goto(url);
-
-  // await delay(500);
-  await page.click('input[value="E"]');
-
-  // await delay(500);
-  await page.click('input[value="invoice"]');
-
-  // await delay(500);
-  await page.click('input[name="NewReq"]');
-  await delay(2000);
-  // END PUPPET PAGE 1
-
-  // try {
-    // START PUPPET PAGE 2
+  initialPage(page);
+  // formPage()
+  try{
     await page.click('input[name="tracking_nbr"]', { clickCount: 3 });
-    await page.keyboard.press("Backspace");
     await page.type('input[name="tracking_nbr"]', trackingNumber);
-    // await delay(500);
 
     await page.click('input[name="invoice_nbr"]', { clickCount: 3 });
-    await page.keyboard.press("Backspace");
     await page.type('input[name="invoice_nbr"]', invoiceNumber);
-    // await delay(500);
-
+    
     await page.click('input[value="Send Request"]');
-    // await page.waitForNavigation({ timeout: 15000 });
-    // END PUPPET PAGE 2
 
-    // START PUPPET PAGE 3 (SCREENSHOT)
-    // await delay(2000);
-    // const buffImg = await page.screenshot({
-    //   encoding: "binary",
-    //   clip: clip,
-    //   // path: `./GSRimgs/${trackingNumber}_${invoiceNumber}.png`,
-    // });
+    await page.waitForNavigation({ waitUntil:"load",  timeout: 15000 });
 
-    // const worker = await createWorker("eng");
-    // const ret = await worker.recognize(buffImg);
-    // array.push("\n<-----Inicio\n" + ret.data.text + "\nFin----->");
-    // console.log("\n<-----Inicio\n" + ret.data.text + "\nFin----->");
-    // await worker.terminate();
-    // await delay(1000);
-    // END PUPPET PAGE 3 (SCREENSHOT)
-  // } catch {
-  //   console.log(
-  //     "Error catched on " + gsr["TRACKING NUMBER"] + "_" + gsr["INVOICE NUMBER"]
-  //   );
-  // }
-  await delay(5000)
-  await page.goBack()
-  await delay(5000)
+    const message = await readMessage();
+
+    if("Mensaje no incluye el tracking_number"){
+      while(counter < 3){
+        await page.goBack()
+        await delay(3000)
+        await page.click('input[value="Send Request"]');
+        counter++;
+      }
+      counter == 0;
+    }
+    await getDenyReason();
+
+    // Si el resultado es thank you, unable to process, u otro tracking number{
+      // page.goBack()
+      // delay(3000)
+      // await page.click('input[value="Send Request"]');
+    // if ( counter > 3)
+    // }
+
+  } catch{
+    console.log(
+      "Error catched on " + gsr["TRACKING NUMBER"] + "_" + gsr["INVOICE NUMBER"]
+    );
+  }
+
+
+  await delay(5000);
+  await page.goBack();
+  await delay(5000);
   await page.click('input[value="Send Request"]');
-  
-  await delay(5000)
-  await page.goBack()
-  await delay(5000)
+
+  await delay(5000);
+  await page.goBack();
+  await delay(5000);
   await page.click('input[value="Send Request"]');
 
-
-  await delay(10000)
+  await delay(10000);
   await browser.close();
 }
 
@@ -103,11 +106,11 @@ function mapData(strArr: string[]) {
     if (message.includes("ADJUSTED")) return `${trackNumber} - APPROVED`;
 
     // console.log(`${trackNumber} - ${motivo}`);
-    
+
     return `${trackNumber} - ${motivo}`;
   });
   const jsonData = JSON.stringify(finalArray, null, 2);
-  fs.writeFileSync('datos.json', jsonData);
+  fs.writeFileSync("datos.json", jsonData);
   createExcelFile(finalArray);
 }
 

@@ -1,11 +1,12 @@
-const puppeteer = require("puppeteer-extra");
-const StealthPlugin = require("puppeteer-extra-plugin-stealth");
+import puppeteer from "puppeteer-extra";
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { Browser, Page } from "puppeteer";
+import { createWorker } from "tesseract.js";
+import * as fs from 'fs';
+import XLSX from "xlsx";
+
 import bufferList from "./bufferGsrList.json";
 import { GsrInterface } from "./gsr.interface";
-import { createWorker } from "tesseract.js";
-var XLSX = require("xlsx");
-import * as fs from 'fs';
 
 
 // PREPARANDO PUPPETEER Y VARIABLES.
@@ -20,7 +21,7 @@ async function gsr(gsr: GsrInterface, array: string[]) {
   const trackingNumber: string = gsr["TRACKING NUMBER"];
   const invoiceNumber: string = gsr["INVOICE NUMBER"];
 
-  const browser: Browser = await puppeteer.launch({ headless: true });
+  const browser: Browser = await puppeteer.launch({ headless: false });
   const page: Page = await browser.newPage();
 
   await page.setViewport({ width: 1200, height: 800 });
@@ -38,7 +39,7 @@ async function gsr(gsr: GsrInterface, array: string[]) {
   await page.click('input[name="NewReq"]');
   await delay(2000);
   // END PUPPET PAGE 1
-
+  
   try {
     // START PUPPET PAGE 2
     await page.click('input[name="tracking_nbr"]', { clickCount: 3 });
@@ -52,7 +53,7 @@ async function gsr(gsr: GsrInterface, array: string[]) {
     // await delay(500);
 
     await page.click('input[value="Send Request"]');
-    await page.waitForNavigation({ timeout: 15000 });
+    await page.waitForNavigation({ waitUntil:"load",  timeout: 15000 });
     // END PUPPET PAGE 2
 
     // START PUPPET PAGE 3 (SCREENSHOT)
@@ -60,7 +61,7 @@ async function gsr(gsr: GsrInterface, array: string[]) {
     const buffImg = await page.screenshot({
       encoding: "binary",
       clip: clip,
-      // path: `./GSRimgs/${trackingNumber}_${invoiceNumber}.png`,
+      path: `./GSRimgs/${trackingNumber}_${invoiceNumber}.png`,
     });
 
     const worker = await createWorker("eng");
@@ -75,7 +76,6 @@ async function gsr(gsr: GsrInterface, array: string[]) {
       "Error catched on " + gsr["TRACKING NUMBER"] + "_" + gsr["INVOICE NUMBER"]
     );
   }
-
   await browser.close();
 }
 
