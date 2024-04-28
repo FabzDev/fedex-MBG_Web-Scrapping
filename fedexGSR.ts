@@ -31,7 +31,7 @@ async function formPage( page: Page, trackingNumber: string, invoiceNumber: stri
 
     await page.click('input[value="Send Request"]');
 
-    await page.waitForNavigation({ waitUntil: "networkidle0", timeout: 15000 });
+    await refinedWaitForNavigation(page);
 }
 
 async function readMessage( page: Page, trackingNumber: string, invoiceNumber: string) {
@@ -92,6 +92,18 @@ function createExcelFile(dataArray: string[]) {
     }
 }
 
+async function refinedWaitForNavigation(page: Page) {
+    await Promise.race([
+        page.waitForNavigation({ waitUntil: "networkidle2", timeout: 15000 }),
+        new Promise((resolve, reject) => {
+            setTimeout(
+                () => reject(new Error("Timeout waiting for navigation")),
+                20000
+            );
+        }),
+    ]);
+}
+
 //START GSR
 async function gsr(gsr: GsrInterface, array: string[]) {
     let counter = 0;
@@ -100,21 +112,51 @@ async function gsr(gsr: GsrInterface, array: string[]) {
     const browser: Browser = await puppeteer.launch({ headless: false });
     const page: Page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 800 });
-
-    await initialPage(page);
-
     try {
+        await Promise.race([
+            page.waitForNavigation({ waitUntil: "networkidle2", timeout: 15000 }),
+            new Promise((resolve, reject) => {
+                setTimeout(
+                    () => reject(new Error("Timeout waiting for navigation")),
+                    20000
+                );
+            }),
+        ]);
+        
+        await initialPage(page);
+
         await formPage(page, trackingNumber, invoiceNumber);
 
-        let message: string = await readMessage(page, trackingNumber, invoiceNumber);
+        let message: string = await readMessage(
+            page,
+            trackingNumber,
+            invoiceNumber
+        );
+
+        console.log(
+            `Iteration 1, Track#: ${trackingNumber}, includes track#? ${message.includes(
+                trackingNumber
+            )}, message: ${message}`
+        ); //TODO REMOVER ESTE LOG
 
         if (!message.includes(trackingNumber)) {
-            while (counter < 2) {
+            while (counter < 1) {
                 await page.goBack();
                 await delay(2000);
                 await page.click('input[value="Send Request"]');
-                await page.waitForNavigation({waitUntil: "networkidle0", timeout: 15000});
-                message = await readMessage(page, trackingNumber, invoiceNumber);
+                await refinedWaitForNavigation(page);
+                message = await readMessage(
+                    page,
+                    trackingNumber,
+                    invoiceNumber
+                );
+                console.log(
+                    `Iteration ${
+                        counter + 2
+                    }, Track#: ${trackingNumber}, includes track#? ${message.includes(
+                        trackingNumber
+                    )}, message: ${message}`
+                ); //TODO REMOVER ESTE LOG
 
                 if (message.includes(trackingNumber)) break;
 
@@ -122,16 +164,18 @@ async function gsr(gsr: GsrInterface, array: string[]) {
             }
         }
         array.push(`${trackingNumber} | ${await getDenyReason(message)}`);
-
     } catch {
-        console.log(`Error catched on ${gsr["TRACKING NUMBER"]}_${gsr["INVOICE NUMBER"]}`);
-        array.push(`${trackingNumber}-Page didn't load.`);
+        console.log(
+            `Error catched on ${gsr["TRACKING NUMBER"]}_${gsr["INVOICE NUMBER"]}`
+        );
+        array.push(`${trackingNumber} | Page didn't load.`);
+        return;
     } finally {
-      await browser.close();
+        await browser.close();
     }
 }
 
-function mapData(finalArray: string[]) {
+function saveData(finalArray: string[]) {
     const jsonData = JSON.stringify(finalArray, null, 2);
     fs.writeFileSync("datos.json", jsonData);
     createExcelFile(finalArray);
@@ -141,7 +185,7 @@ async function main(invoices: GsrInterface[], responses: string[]) {
     for (const gsrInfo of invoices) {
         await gsr(gsrInfo, responses);
     }
-    mapData(responses);
+    saveData(responses);
 }
 
 main(gsrList, gsrResultArray);
