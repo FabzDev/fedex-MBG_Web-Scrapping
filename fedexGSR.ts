@@ -31,7 +31,7 @@ async function formPage( page: Page, trackingNumber: string, invoiceNumber: stri
 
     await page.click('input[value="Send Request"]');
 
-    await page.waitForNavigation({ waitUntil: "load", timeout: 15000 });
+    await page.waitForNavigation({ waitUntil: "networkidle0", timeout: 15000 });
 }
 
 async function readMessage( page: Page, trackingNumber: string, invoiceNumber: string) {
@@ -108,22 +108,20 @@ async function gsr(gsr: GsrInterface, array: string[]) {
 
         let message: string = await readMessage(page, trackingNumber, invoiceNumber);
 
-        if (message.includes(trackingNumber)) {
-            array.push(`${trackingNumber}-${await getDenyReason(message)}`);
-        } else {
+        if (!message.includes(trackingNumber)) {
             while (counter < 2) {
                 await page.goBack();
-                await delay(3000);
+                await delay(2000);
                 await page.click('input[value="Send Request"]');
-                await page.waitForNavigation({waitUntil: "load", timeout: 15000});
+                await page.waitForNavigation({waitUntil: "networkidle0", timeout: 15000});
                 message = await readMessage(page, trackingNumber, invoiceNumber);
 
                 if (message.includes(trackingNumber)) break;
 
                 counter++;
             }
-            array.push(`${trackingNumber} | ${await getDenyReason(message)}`);
         }
+        array.push(`${trackingNumber} | ${await getDenyReason(message)}`);
 
     } catch {
         console.log(`Error catched on ${gsr["TRACKING NUMBER"]}_${gsr["INVOICE NUMBER"]}`);
