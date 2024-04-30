@@ -106,64 +106,22 @@ async function refinedWaitForNavigation(page: Page) {
 
 //START GSR
 async function gsr(gsr: GsrInterface, array: string[]) {
-    let counter = 0;
     const trackingNumber: string = gsr["TRACKING NUMBER"];
     const invoiceNumber: string = gsr["INVOICE NUMBER"];
-    const browser: Browser = await puppeteer.launch({ headless: false });
+    const browser: Browser = await puppeteer.launch({ headless: true });
     const page: Page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 800 });
     try {
         await Promise.race([
-            page.waitForNavigation({ waitUntil: "networkidle2", timeout: 15000 }),
+            scrapPage(page, trackingNumber, invoiceNumber,gsrResultArray),
             new Promise((resolve, reject) => {
                 setTimeout(
                     () => reject(new Error("Timeout waiting for navigation")),
-                    20000
+                    60000
                 );
             }),
         ]);
         
-        await initialPage(page);
-
-        await formPage(page, trackingNumber, invoiceNumber);
-
-        let message: string = await readMessage(
-            page,
-            trackingNumber,
-            invoiceNumber
-        );
-
-        console.log(
-            `Iteration 1, Track#: ${trackingNumber}, includes track#? ${message.includes(
-                trackingNumber
-            )}, message: ${message}`
-        ); //TODO REMOVER ESTE LOG
-
-        if (!message.includes(trackingNumber)) {
-            while (counter < 1) {
-                await page.goBack();
-                await delay(2000);
-                await page.click('input[value="Send Request"]');
-                await refinedWaitForNavigation(page);
-                message = await readMessage(
-                    page,
-                    trackingNumber,
-                    invoiceNumber
-                );
-                console.log(
-                    `Iteration ${
-                        counter + 2
-                    }, Track#: ${trackingNumber}, includes track#? ${message.includes(
-                        trackingNumber
-                    )}, message: ${message}`
-                ); //TODO REMOVER ESTE LOG
-
-                if (message.includes(trackingNumber)) break;
-
-                counter++;
-            }
-        }
-        array.push(`${trackingNumber} | ${await getDenyReason(message)}`);
     } catch {
         console.log(
             `Error catched on ${gsr["TRACKING NUMBER"]}_${gsr["INVOICE NUMBER"]}`
@@ -187,5 +145,48 @@ async function main(invoices: GsrInterface[], responses: string[]) {
     }
     saveData(responses);
 }
+async function scrapPage(page: Page, trackingNumber: string, invoiceNumber: string, array: string[]){
+    let counter = 0;
+    await initialPage(page);
 
+    await formPage(page, trackingNumber, invoiceNumber);
+
+    let message: string = await readMessage(
+        page,
+        trackingNumber,
+        invoiceNumber
+    );
+
+    console.log(
+        `Iteration 1, Track#: ${trackingNumber}, includes track#? ${message.includes(
+            trackingNumber
+        )}, message: ${message}`
+    ); //TODO REMOVER ESTE LOG
+
+    if (!message.includes(trackingNumber)) {
+        while (counter < 1) {
+            await page.goBack();
+            await delay(2000);
+            await page.click('input[value="Send Request"]');
+            await refinedWaitForNavigation(page);
+            message = await readMessage(
+                page,
+                trackingNumber,
+                invoiceNumber
+            );
+            console.log(
+                `Iteration ${
+                    counter + 2
+                }, Track#: ${trackingNumber}, includes track#? ${message.includes(
+                    trackingNumber
+                )}, message: ${message}`
+            ); //TODO REMOVER ESTE LOG
+
+            if (message.includes(trackingNumber)) break;
+
+            counter++;
+        }
+    }
+    array.push(`${trackingNumber} | ${await getDenyReason(message)}`);
+}
 main(gsrList, gsrResultArray);
