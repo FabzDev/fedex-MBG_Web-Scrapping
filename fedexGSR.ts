@@ -164,7 +164,7 @@ async function scrapPage(page: Page, trackingNumber: string, invoiceNumber: stri
     ); //TODO REMOVER ESTE LOG
 
     if (!message.includes(trackingNumber)) {
-        while (counter < 1) {
+        while (counter < 2) {
             await page.goBack();
             await delay(2000);
             await page.click('input[value="Send Request"]');
