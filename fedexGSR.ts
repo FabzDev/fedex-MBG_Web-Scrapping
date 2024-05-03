@@ -5,7 +5,7 @@ import { createWorker } from "tesseract.js";
 import XLSX from "xlsx";
 import * as fs from "fs";
 
-import gsrList from "./gsrList.json";
+import gsrList from "./data/in/gsrList.json";
 import { rejectReasons } from "./reasons";
 import { GsrInterface } from "./gsr.interface";
 
@@ -66,7 +66,7 @@ function createExcelFile(dataArray: string[]) {
 
     // Crear una nueva hoja
     const worksheet = XLSX.utils.aoa_to_sheet([
-        ["Tracking Number", "Description"],
+        ["Invoice Number", "Tracking Number", "Description"],
     ]);
 
     // Iterar sobre cada elemento del arreglo
@@ -75,9 +75,7 @@ function createExcelFile(dataArray: string[]) {
         const partes = dataString.split(" | ");
 
         // Agregar una fila con los datos a la hoja
-        const lastRow = XLSX.utils.sheet_add_aoa(worksheet, [partes], {
-            origin: -1,
-        });
+        const lastRow = XLSX.utils.sheet_add_aoa(worksheet, [partes], { origin: -1 });
     });
 
     // Agregar la hoja al libro
@@ -85,10 +83,10 @@ function createExcelFile(dataArray: string[]) {
 
     try {
         // Guardar el libro como archivo Excel
-        XLSX.writeFile(workbook, "test.xlsx");
+        XLSX.writeFile(workbook, "./data/out/test.xlsx");
     } catch (error) {
         console.log(error);
-        XLSX.writeFile(workbook, "test2.xlsx");
+        XLSX.writeFile(workbook, "./data/out/test2.xlsx");
     }
 }
 
@@ -111,6 +109,8 @@ async function gsr(gsr: GsrInterface, array: string[]) {
     const browser: Browser = await puppeteer.launch({ headless: true });
     const page: Page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 800 });
+    console.log(`\n\nTrack Number: ${gsr["TRACKING NUMBER"]} | Invoice Number: ${gsr["INVOICE NUMBER"]}`);
+    
     try {
         await Promise.race([
             scrapPage(page, trackingNumber, invoiceNumber,gsrResultArray),
@@ -123,10 +123,8 @@ async function gsr(gsr: GsrInterface, array: string[]) {
         ]);
         
     } catch {
-        console.log(
-            `Error catched on ${gsr["TRACKING NUMBER"]}_${gsr["INVOICE NUMBER"]}`
-        );
-        array.push(`${trackingNumber} | Page didn't load.`);
+        console.log(`Error catched on ${gsr["TRACKING NUMBER"]}_${gsr["INVOICE NUMBER"]}`);
+        array.push(`${invoiceNumber} | ${trackingNumber} | Page didn't load.`);
         return;
     } finally {
         await browser.close();
@@ -135,7 +133,7 @@ async function gsr(gsr: GsrInterface, array: string[]) {
 
 function saveData(finalArray: string[]) {
     const jsonData = JSON.stringify(finalArray, null, 2);
-    fs.writeFileSync("datos.json", jsonData);
+    fs.writeFileSync("./data/out/datos.json", jsonData);
     createExcelFile(finalArray);
 }
 
@@ -158,9 +156,7 @@ async function scrapPage(page: Page, trackingNumber: string, invoiceNumber: stri
     );
 
     console.log(
-        `Iteration 1, Track#: ${trackingNumber}, includes track#? ${message.includes(
-            trackingNumber
-        )}, message: ${message}`
+        `\nIteration 1\nIncludes Track#: ${message.includes( trackingNumber )}\n${message}`
     ); //TODO REMOVER ESTE LOG
 
     if (!message.includes(trackingNumber)) {
@@ -175,18 +171,14 @@ async function scrapPage(page: Page, trackingNumber: string, invoiceNumber: stri
                 invoiceNumber
             );
             console.log(
-                `Iteration ${
-                    counter + 2
-                }, Track#: ${trackingNumber}, includes track#? ${message.includes(
-                    trackingNumber
-                )}, message: ${message}`
-            ); //TODO REMOVER ESTE LOG
+                `\nIteration ${ counter + 2 }\nIncludes Track#: ${message.includes( trackingNumber )}\n${message}`
+            ); //TODO console log
 
             if (message.includes(trackingNumber)) break;
 
             counter++;
         }
     }
-    array.push(`${trackingNumber} | ${await getDenyReason(message)}`);
+    array.push(`${invoiceNumber} | ${trackingNumber} | ${await getDenyReason(message)}`);
 }
 main(gsrList, gsrResultArray);
