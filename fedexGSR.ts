@@ -6,7 +6,7 @@ import XLSX from "xlsx";
 import * as fs from "fs";
 import gsrList from "./data/in/gsrList.json";
 import { rejectReasons } from "./reasons";
-import { GsrInterface } from "./gsr.interface";
+import { GsrInterface } from "./Interfaces/gsr.interface";
 
 puppeteer.use(StealthPlugin());
 
