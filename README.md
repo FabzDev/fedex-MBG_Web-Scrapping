@@ -24,12 +24,14 @@ To get started with the Fedex Money-Back-Guarantee Assistant, follow these steps
 ```
 
 2. Install dependencies:
- ```bash
+ ```
    npm install
 ```
 
-3. Start the application:
- ```bash
+
+
+. Start the application:
+ ```
    npm start or npm run gsr
 ```
 
