@@ -79,10 +79,10 @@ function createExcelFile(dataArray: string[]) {
 
     try {
         // Guardar el libro como archivo Excel
-        XLSX.writeFile(workbook, "./data/out/test.xlsx");
+        XLSX.writeFile(workbook, "./data/out/results.xlsx");
     } catch (error) {
         console.log(error);
-        XLSX.writeFile(workbook, "./data/out/test2.xlsx");
+        XLSX.writeFile(workbook, "./data/out/results-backup.xlsx");
     }
 }
 
@@ -129,7 +129,7 @@ async function scrapPage(page: Page, trackingNumber: string, invoiceNumber: stri
 
 function saveData(outDataArray: string[]) {
     const jsonData = JSON.stringify(outDataArray, null, 2);
-    fs.writeFileSync("./data/out/datos.json", jsonData);
+    fs.writeFileSync("./data/out/results.json", jsonData);
     createExcelFile(outDataArray);
 }
 
