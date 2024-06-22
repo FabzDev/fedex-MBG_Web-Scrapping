@@ -4,8 +4,7 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
-    "start": "npx ts-node fedexGSR.ts",
-    "gsr": "npx ts-node fedexGSR.ts"
+    "gsr": "ts-node fedexGSR.ts"
   },
   "keywords": [],
   "author": "",

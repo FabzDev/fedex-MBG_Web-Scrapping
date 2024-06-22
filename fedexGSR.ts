@@ -4,22 +4,49 @@ import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { createWorker } from "tesseract.js";
 import XLSX from "xlsx";
 import * as fs from "fs";
-import gsrList from "./data/in/gsrList.json";
 import { rejectReasons } from "./reasons";
 import { GsrInterface } from "./Interfaces/gsr.interface";
+import path from 'path';
 
 puppeteer.use(StealthPlugin());
 
 const url = "https://www.fedex.com/servlet/InvoiceServlet?link=4&jsp_name=adjustment&orig_country=US&language=english/";
 const gsrResultArray: string[] = [];
 const clip = { x: 290, y: 190, width: 700, height: 120 };
+const xlsFilePath = path.join('D:', 'FDX_LATE DELIVERIES.xlsx');
+const workbook = XLSX.readFile(xlsFilePath, {cellStyles: true});
+const ws = workbook.Sheets[workbook.SheetNames[0]];
+
+const raw_data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+const headless_unhiden_rows= raw_data.filter( (row:any, index: number) => row[0] != 'TRACKING NUMBER' && !isRowHidden(ws, index));
+const gsrList = headless_unhiden_rows.map( (row: any) => ({"TRACKING NUMBER": row[0].toString(), "INVOICE NUMBER": row[1].toString()}) )
+
+// console.log(gsrList);
+
+
+function isRowHidden(ws:any, rowIndex:any) {
+    const firstRow = XLSX.utils.decode_range(ws!['!ref']!).s.r;
+    const lastRow = XLSX.utils.decode_range(ws!['!ref']!).e.r;
+    if(ws!['!rows']![rowIndex]) return true;
+    return false;
+}
+
+// References sheetJS
+// console.log(ws['!rows'] && ws['!rows'][1]);
+// console.log(ws!['!rows']![9]);
+// console.log(isRowHidden(ws, 9));
+// console.log(`
+//     First Row: ${XLSX.utils.decode_range(ws!['!ref']!).s.r}
+//     Last Row: ${XLSX.utils.decode_range(ws!['!ref']!).e.r}
+// `);
+
 
 
 async function mainPage(page: Page) {
     await page.goto(url);
     await page.click('input[value="E"]');
     await page.click('input[value="invoice"]');
-    await page.click('input[name="NewReq"]');
+    await page.click('input[name="StatusReq"]');
     await applyDelay(2000);
 }
 
@@ -79,10 +106,10 @@ function createExcelFile(dataArray: string[]) {
 
     try {
         // Guardar el libro como archivo Excel
-        XLSX.writeFile(workbook, "./data/out/results.xlsx");
+        XLSX.writeFile(workbook, "./data/results.xlsx");
     } catch (error) {
         console.log(error);
-        XLSX.writeFile(workbook, "./data/out/results-backup.xlsx");
+        XLSX.writeFile(workbook, "./data/results-backup.xlsx");
     }
 }
 
@@ -111,7 +138,7 @@ async function scrapPage(page: Page, trackingNumber: string, invoiceNumber: stri
     console.log( `\nIteration 1\nIncludes Track#: ${responseTxt.includes( trackingNumber )}\n${responseTxt}`);
 
     if (!responseTxt.includes(trackingNumber)) {
-        while (counter < 2) {
+        while (counter < 1) {
             await page.goBack();
             await applyDelay(2000);
             await page.click('input[value="Send Request"]');
@@ -129,7 +156,7 @@ async function scrapPage(page: Page, trackingNumber: string, invoiceNumber: stri
 
 function saveData(outDataArray: string[]) {
     const jsonData = JSON.stringify(outDataArray, null, 2);
-    fs.writeFileSync("./data/out/results.json", jsonData);
+    fs.writeFileSync("./data/results.json", jsonData);
     createExcelFile(outDataArray);
 }
 
@@ -159,8 +186,9 @@ async function gsr(gsr: GsrInterface, outDataArray: string[]) {
             }),
         ]);
 
-    } catch {
+    } catch (error) {
         console.log(`Error catched on ${gsr["TRACKING NUMBER"]}_${gsr["INVOICE NUMBER"]}`);
+        console.log(error);
         outDataArray.push(`${trackingNumber} | ${invoiceNumber} | Page didn't load.`);
         return;
     } finally {
