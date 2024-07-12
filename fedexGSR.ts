@@ -46,7 +46,8 @@ async function mainPage(page: Page) {
     await page.goto(url);
     await page.click('input[value="E"]');
     await page.click('input[value="invoice"]');
-    await page.click('input[name="StatusReq"]');
+    await page.click('input[name="NewReq"]'); // Make a New Request
+    // await page.click('input[name="StatusReq"]'); //Check Status of Existing Request
     await applyDelay(2000);
 }
 
@@ -200,6 +201,7 @@ async function gsr(gsr: GsrInterface, outDataArray: string[]) {
 
 async function main(invoices: GsrInterface[], responses: string[]) {
     for (const gsrInfo of invoices) {
+        await applyDelay(3000);
         await gsr(gsrInfo, responses);
     }
     saveData(responses);
