@@ -1,4 +1,4 @@
-export const rejectReasons = {
+export const DictionaryDisputeResults = {
     "ADJUSTED" : "APPROVED",
     "WE DID NOT MEET OUR SERVICE" : "APPROVED",
     "UNABLE TO PROCESS" : "PENDING - UNABLE TO PROCESS REQUEST",
